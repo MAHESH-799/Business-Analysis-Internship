@@ -1,0 +1,551 @@
+# This Python 3 environment comes with many helpful analytics libraries installed
+# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python
+# For example, here's several helpful packages to load
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+
+# Input data files are available in the read-only "../input/" directory
+# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
+
+import os
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using "Save & Run All" 
+# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session
+
+!pip install numpy==<1.23.0>
+
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+
+# Assuming you have a CSV file named 'sales_data.csv' with columns 'date' and 'sales'
+sales_data = pd.read_csv('../input/forecasting-sales/train.csv')
+
+# Convert date columns to datetime format
+sales_data['Order Date'] = pd.to_datetime(sales_data['Order Date'])
+sales_data['Ship Date'] = pd.to_datetime(sales_data['Ship Date'])
+
+# Set 'Order Date' as the index
+sales_data.set_index('Order Date', inplace=True)
+
+# Extract the 'Sales' column
+sales = sales_data['Sales']
+
+# Resample the data to monthly frequency and fill any missing values
+monthly_sales = sales.resample('M').sum().fillna(0)
+
+# Compute rolling statistics (e.g., mean and standard deviation)
+rolling_mean = monthly_sales.rolling(window=3).mean()  # 3-month rolling mean
+rolling_std = monthly_sales.rolling(window=3).std()  # 3-month rolling standard deviation
+
+# Plot the time series and rolling statistics
+plt.figure(figsize=(10, 6))
+plt.plot(monthly_sales, label='Monthly Sales')
+plt.plot(rolling_mean, label='3-Month Rolling Mean')
+plt.plot(rolling_std, label='3-Month Rolling Std')
+plt.xlabel('Date')
+plt.ylabel('Sales')
+plt.title('Sales Forecasting')
+plt.legend()
+plt.show()
+
+# Group the data by product name and calculate the total sales for each product
+product_sales = sales_data.groupby('Product Name')['Sales'].sum()
+
+# Sort the products by sales in descending order and select the top 10
+top_10_products = product_sales.nlargest(10)
+
+# Plot the pie chart
+plt.figure(figsize=(8, 8))
+plt.pie(top_10_products, labels=top_10_products.index, autopct='%1.1f%%')
+plt.title('Top 10 Products by Sales')
+plt.axis('equal')  # Ensure the pie is circular
+
+plt.show()
+
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
+
+# Group the data by state and calculate the total sales for each state
+state_sales = sales_data.groupby('State')['Sales'].sum()
+
+# Convert sales to millions with 2 decimal points
+state_sales = state_sales / 1000000  # Convert to millions
+state_sales = state_sales.round(2)  # Round to 2 decimal points
+
+# Sort the states by sales in descending order and select the top 10
+top_10_states = state_sales.nlargest(10)
+
+# Plot the bar chart
+plt.figure(figsize=(10, 6))
+ax = top_10_states.plot(kind='bar')
+ax.yaxis.set_major_formatter(mtick.StrMethodFormatter('${x:,.2f}M'))
+plt.xlabel('State')
+plt.ylabel('Sales (Millions)')
+plt.title('Top 10 Sales by State')
+plt.xticks(rotation=45)
+
+# Add data labels to the bar chart
+for i, v in enumerate(top_10_states):
+    ax.text(i, v, str(v), ha='center', va='bottom')
+
+plt.show()
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+
+sales_data['Order Date'] = sales_data.index
+
+# Update the column name 'Order Date' if it differs in your dataset
+sales_data['Order Date'] = pd.to_datetime(sales_data['Order Date'])
+
+# Extract the year from the 'Order Date' column
+sales_data['Year'] = sales_data['Order Date'].dt.year
+
+# Filter the data for the years 2019 to 2022
+filtered_data = sales_data[(sales_data['Year'] >= 204) & (sales_data['Year'] <= 2022)]
+
+# Group the data by city and calculate the total sales for each city
+city_sales = filtered_data.groupby('City')['Sales'].sum()
+
+# Convert sales values to millions
+city_sales = city_sales / 1000000
+
+# Sort the cities by sales in ascending order and select the top 10
+top_10_cities = city_sales.nlargest(10)
+
+# Plot the top 10 sales by city
+plt.figure(figsize=(10, 6))
+ax = top_10_cities.plot(kind='barh', color='blue')
+ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f'${abs(x):.2f}M'))
+plt.ylabel('City')
+plt.xlabel('Sales (in Millions)')
+plt.title('Top 10 Sales by City (Ascending)')
+
+# Add data labels to the bars
+for i, v in enumerate(top_10_cities):
+    ax.text(abs(v), i, f'${abs(v):.2f}M', ha='left', va='center')
+
+plt.show()
+
+import pandas as pd
+import ipywidgets as widgets
+from IPython.display import display
+
+# Create a function to update the sliced data based on the slicer selection
+def update_sliced_data(start_year, end_year):
+    sliced_data = sales_data[(sales_data['Order Date'].dt.year >= start_year) & (sales_data['Order Date'].dt.year <= end_year)]
+    display(sliced_data)
+
+# Get the unique years in the data
+unique_years = sorted(sales_data['Order Date'].dt.year.unique())
+
+# Create the slicer widgets
+start_year_widget = widgets.Dropdown(options=unique_years, description='Start Year:')
+end_year_widget = widgets.Dropdown(options=unique_years, description='End Year:')
+button = widgets.Button(description='Update')
+
+# Define the callback function for the button click event
+def on_button_click(button):
+    start_year = start_year_widget.value
+    end_year = end_year_widget.value
+    update_sliced_data(start_year, end_year)
+
+# Register the callback function to the button click event
+button.on_click(on_button_click)
+
+# Display the slicer widgets and initial sliced data
+display(start_year_widget, end_year_widget, button)
+update_sliced_data(unique_years[0], unique_years[-1])
+
+import pandas as pd
+
+# Define the card function to calculate the total sales
+def total_sales_card(data):
+    total_sales = data['Sales'].sum()
+    return total_sales
+
+# Call the total_sales_card function with the sales data
+total_sales = total_sales_card(sales_data)
+
+# Print the total sales
+print(f"Total Sales: ${total_sales}")
+
+sales_data.drop(['Product Name' , 'Sales'], axis=1)
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Update the column name 'Order Date' if it differs in your dataset
+sales_data['Order Date'] = pd.to_datetime(sales_data['Order Date'])
+
+# Extract the year from the 'Order Date' column
+sales_data['Year'] = sales_data['Order Date'].dt.year
+
+# Filter the data for the years 2014 to 2022
+filtered_data = sales_data[(sales_data['Year'] >= 2014) & (sales_data['Year'] <= 2022)]
+
+# Group the data by year and product, and calculate the total sales for each combination
+yearly_product_sales = filtered_data.groupby(['Year', 'Product Name'])['Sales'].sum().reset_index()
+
+# Find the top product with the highest sales for each year
+top_product_by_year = yearly_product_sales.groupby('Year').apply(lambda x: x.loc[x['Sales'].idxmax()])
+
+# Prepare data for the line chart
+years = top_product_by_year['Year']
+sales = top_product_by_year['Sales']
+products = top_product_by_year['Product Name']
+
+# Create the line chart with product names as labels
+plt.figure(figsize=(10, 6))
+plt.plot(years, sales, marker='o', linestyle='-', color='b')
+plt.xlabel('Year')
+plt.ylabel('Sales')
+plt.title('Top Product Sales by Year')
+plt.grid(True)
+
+# Add labels for product names
+for year, sale, product in zip(years, sales, products):
+    plt.text(year, sale, product, ha='center', va='bottom')
+
+plt.show()
+
+
+import pandas as pd
+
+# Update the column name 'Order Date' if it differs in your dataset
+sales_data['Order Date'] = pd.to_datetime(sales_data['Order Date'])
+
+# Extract the year from the 'Order Date' column
+sales_data['Year'] = sales_data['Order Date'].dt.year
+
+# Filter the data for the years 2014 to 2022
+filtered_data = sales_data[(sales_data['Year'] >= 2014) & (sales_data['Year'] <= 2022)]
+
+# Group the data by year and product, and calculate the total sales for each combination
+yearly_product_sales = filtered_data.groupby(['Year', 'Product Name'])['Sales'].sum().reset_index()
+
+# Find the top product with the highest sales for each year
+top_product_by_year = yearly_product_sales.groupby('Year').apply(lambda x: x.loc[x['Sales'].idxmax()])
+
+# Display the data of the top product in every year as a table
+top_product_table = top_product_by_year[['Year', 'Product Name', 'Sales']]
+top_product_table.columns = ['Year', 'Top Product', 'Sales']
+top_product_table.reset_index(drop=True, inplace=True)
+print(top_product_table)
+
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+
+# Group the data by state and calculate the total sales for each state
+state_sales = sales_data.groupby('State')['Sales'].sum()
+
+# Sort the states by sales in descending order and select the top 10
+top_10_states = state_sales.nlargest(10)
+
+# Perform sales forecasting for each state's top 10 products
+for state in top_10_states.index:
+    state_data = sales_data[sales_data['State'] == state]
+    state_product_sales = state_data.groupby('Product Name')['Sales'].sum()
+
+    # Sort the products by sales in descending order and select the top 10
+    top_10_products = state_product_sales.nlargest(10)
+
+    # Prepare the data for linear regression
+    X = pd.Series(range(len(top_10_products))).values.reshape(-1, 1)
+    y = top_10_products.values.reshape(-1, 1)
+
+    # Fit a linear regression model
+    model = LinearRegression()
+    model.fit(X, y)
+
+    # Generate sales forecast for the next 5 months
+    forecast_periods = range(len(top_10_products), len(top_10_products) + 5)
+    sales_forecast = model.predict(pd.Series(forecast_periods).values.reshape(-1, 1))
+
+    # Plot the sales forecast
+    plt.figure(figsize=(10, 6))
+    plt.plot(X, y, 'o', label='Actual Sales')
+    plt.plot(forecast_periods, sales_forecast, 'r--', label='Sales Forecast')
+    plt.xlabel('Forecasting Months')
+    plt.ylabel('Sales')
+    plt.title(f'Sales Forecast for Top 10 Products in {state}')
+    plt.legend()
+    plt.show()
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+
+# Group the data by state and product, and calculate the total sales for each combination
+state_product_sales = sales_data.groupby(['State', 'Product Name'])['Sales'].sum()
+
+# Sort the sales by state and product in descending order and select the top 10
+top_10_sales = state_product_sales.nlargest(10)
+
+# Perform sales forecasting for each top 10 sales combination
+for (state, product) in top_10_sales.index:
+    state_product_data = sales_data[(sales_data['State'] == state) & (sales_data['Product Name'] == product)]
+
+    # Prepare the data for linear regression
+    X = pd.Series(range(len(state_product_data))).values.reshape(-1, 1)
+    y = state_product_data['Sales'].values.reshape(-1, 1)
+
+    # Fit a linear regression model
+    model = LinearRegression()
+    model.fit(X, y)
+
+    # Generate sales forecast for the next 5 months
+    forecast_periods = range(len(state_product_data), len(state_product_data) + 5)
+    sales_forecast = model.predict(pd.Series(forecast_periods).values.reshape(-1, 1))
+
+    # Plot the sales forecast
+    plt.figure(figsize=(10, 6))
+    plt.plot(X, y, 'o', label='Actual Sales')
+    plt.plot(forecast_periods, sales_forecast, 'r--', label='Sales Forecast')
+    plt.xlabel('Forecasting Months')
+    plt.ylabel('Sales')
+    plt.title(f'Sales Forecast for {product} in {state}')
+    plt.legend()
+    plt.show()
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Convert the 'Order Date' column to datetime format
+sales_data['Order Date'] = pd.to_datetime(sales_data['Order Date'])
+
+# Extract the year from the 'Order Date' column
+sales_data['Year'] = sales_data['Order Date'].dt.year
+
+# Group the data by year and calculate the total sales for each year
+yearly_revenue = sales_data.groupby('Year')['Sales'].sum()
+
+# Create a line plot with data labels
+plt.figure(figsize=(10, 6))
+plt.plot(yearly_revenue.index, yearly_revenue.values, marker='o')
+
+# Add data labels to each data point
+for x, y in zip(yearly_revenue.index, yearly_revenue.values):
+    plt.text(x, y, f'{y:.2f}M', ha='center', va='bottom')
+
+plt.xlabel('Year')
+plt.ylabel('Revenue')
+plt.title('Yearly Revenue from Total Sales')
+plt.grid(True)
+plt.show()
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import ipywidgets as widgets
+
+# Create a function to update the plot based on slicer selections
+def update_plot(state, city):
+    # Filter the data based on the selected state and city
+    filtered_data = sales_data[(sales_data['State'] == state) & (sales_data['City'] == city)]
+
+    # Perform further analysis or visualization with the filtered data
+    # Add your code here to update the plot or perform other operations
+
+# Create the interactive slicers
+state_slicer = widgets.Dropdown(options=list(sales_data['State'].unique()), description='State:')
+city_slicer = widgets.Dropdown(options=list(sales_data['City'].unique()), description='City:')
+
+# Create the function to handle slicer value changes
+def handle_slicer_change(change):
+    state = state_slicer.value
+    city = city_slicer.value
+    update_plot(state, city)
+
+# Attach the slicer value change handlers
+state_slicer.observe(handle_slicer_change, names='value')
+city_slicer.observe(handle_slicer_change, names='value')
+
+# Display the slicers
+display(state_slicer)
+display(city_slicer)
+
+# Initial plot with default slicer values
+update_plot(state_slicer.value, city_slicer.value)
+
+# Create a function to update the plot based on slicer selections
+def update_plot(ship_mode, segment):
+    # Filter the data based on the selected ship mode and segment
+    filtered_data = sales_data[(sales_data['Ship Mode'] == ship_mode) & (sales_data['Segment'] == segment)]
+
+    # Perform further analysis or visualization with the filtered data
+    # Add your code here to update the plot or perform other operations
+
+# Create the interactive slicers
+ship_mode_slicer = widgets.Dropdown(options=list(sales_data['Ship Mode'].unique()), description='Ship Mode:', value='Standard Class')
+segment_slicer = widgets.Dropdown(options=list(sales_data['Segment'].unique()), description='Segment:', value='Consumer')
+
+# Create the function to handle slicer value changes
+def handle_slicer_change(change):
+    ship_mode = ship_mode_slicer.value
+    segment = segment_slicer.value
+    update_plot(ship_mode, segment)
+
+# Attach the slicer value change handlers
+ship_mode_slicer.observe(handle_slicer_change, names='value')
+segment_slicer.observe(handle_slicer_change, names='value')
+
+# Display the slicers
+display(ship_mode_slicer)
+display(segment_slicer)
+
+# Initial plot with default slicer values
+update_plot(ship_mode_slicer.value, segment_slicer.value)
+
+# Add your code here to create the initial plot based on the default slicer values
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+
+# Group the data by Sub-Category and calculate the total sales for each Sub-Category
+subcat_sales = sales_data.groupby('Sub-Category')['Sales'].sum()
+
+# Sort the Sub-Categories by sales in descending order and select the top 10
+top_10_subcats = subcat_sales.nlargest(10)
+
+# Perform sales forecasting for each top 10 Sub-Category
+for subcat in top_10_subcats.index:
+    subcat_data = sales_data[sales_data['Sub-Category'] == subcat]
+
+    # Extract the Order Date and Sales columns
+    subcat_data = subcat_data[['Order Date', 'Sales']]
+
+    # Convert the Order Date column to datetime format
+    subcat_data['Order Date'] = pd.to_datetime(subcat_data['Order Date'])
+
+    # Set the Order Date as the index
+    subcat_data = subcat_data.set_index('Order Date')
+
+    # Resample the data to monthly frequency and calculate the total sales for each month
+    monthly_sales = subcat_data.resample('M').sum()
+
+    # Prepare the data for linear regression
+    X = pd.Series(range(len(monthly_sales))).values.reshape(-1, 1)
+    y = monthly_sales.values.reshape(-1, 1)
+
+    # Fit a linear regression model
+    model = LinearRegression()
+    model.fit(X, y)
+
+    # Generate sales forecast for the next 5 months
+    forecast_periods = range(len(monthly_sales), len(monthly_sales) + 5)
+    sales_forecast = model.predict(pd.Series(forecast_periods).values.reshape(-1, 1))
+
+    # Plot the sales forecast
+    plt.figure(figsize=(10, 6))
+    plt.plot(X, y, 'o', label='Actual Sales')
+    plt.plot(forecast_periods, sales_forecast, 'r--', label='Sales Forecast')
+    plt.xlabel('Months')
+    plt.ylabel('Sales')
+    plt.title(f'Sales Forecast for {subcat}')
+    plt.legend()
+    plt.show()
+
+
+# Slicer For Category
+import pandas as pd
+import ipywidgets as widgets
+from IPython.display import display
+
+# Extract unique categories
+categories = sales_data['Category'].unique()
+
+# Create the Category slicer
+category_slicer = widgets.Dropdown(
+    options=categories,
+    description='Category:',
+    layout={'width': '300px'}
+)
+
+# Function to handle slicer changes
+def on_slicer_change(change):
+    selected_category = change['new']
+    if selected_category:
+        filtered_data = sales_data[sales_data['Category'] == selected_category]
+    else:
+        filtered_data = sales_data.copy()
+
+    # Display the filtered sales data
+    print(filtered_data)
+
+# Attach the callback function to slicer change event
+category_slicer.observe(on_slicer_change, names='value')
+
+# Display the Category slicer
+display(category_slicer)
+
+# Slicer For Sub-Category
+import pandas as pd
+import ipywidgets as widgets
+from IPython.display import display
+
+# Extract unique sub-categories
+sub_categories = sales_data['Sub-Category'].unique()
+
+# Create the Sub-Category slicer
+sub_category_slicer = widgets.Dropdown(
+    options=sub_categories,
+    description='Sub-Category:',
+    layout={'width': '300px'}
+)
+
+# Function to handle slicer changes
+def on_slicer_change(change):
+    selected_sub_category = change['new']
+    if selected_sub_category:
+        filtered_data = sales_data[sales_data['Sub-Category'] == selected_sub_category]
+    else:
+        filtered_data = sales_data.copy()
+
+    # Display the filtered sales data
+    print(filtered_data)
+
+# Attach the callback function to slicer change event
+sub_category_slicer.observe(on_slicer_change, names='value')
+
+# Display the Sub-Category slicer
+display(sub_category_slicer)
+
+# Slicer For Region
+import pandas as pd
+import ipywidgets as widgets
+from IPython.display import display
+
+# Extract unique regions
+regions = sales_data['Region'].unique()
+
+# Create the Region slicer
+region_slicer = widgets.Dropdown(
+    options=regions,
+    description='Region:',
+    layout={'width': '300px'}
+)
+
+# Function to handle slicer changes
+def on_slicer_change(change):
+    selected_region = change['new']
+    if selected_region:
+        filtered_data = sales_data[sales_data['Region'] == selected_region]
+    else:
+        filtered_data = sales_data.copy()
+
+    # Display the filtered sales data
+    print(filtered_data)
+
+# Attach the callback function to slicer change event
+region_slicer.observe(on_slicer_change, names='value')
+
+# Display the Region slicer
+display(region_slicer)
