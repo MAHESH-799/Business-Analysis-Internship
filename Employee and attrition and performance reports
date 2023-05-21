@@ -1,0 +1,234 @@
+# This Python 3 environment comes with many helpful analytics libraries installed
+# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python
+# For example, here's several helpful packages to load
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+
+# Input data files are available in the read-only "../input/" directory
+# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
+
+import os
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+!pip install numpy==<1.2.0>
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Assuming 'df' is the DataFrame you are working with
+# You can replace 'df' with the actual name of your DataFrame
+
+df = pd.read_csv('../input/employee-and-attrition-and-performance-analysis/WA_Fn-UseC_-HR-Employee-Attrition (1).csv')
+df.head()
+
+# Get the shape of the DataFrame
+shape = df.shape
+
+# Print the output
+print(shape)
+
+# Generate descriptive statistics of the DataFrame
+description = df.describe()
+
+# Print the output
+print(description)
+
+# Check for missing values in the DataFrame
+missing_values = df.isnull().sum()
+
+# Print the output
+print(missing_values)
+
+# Create a DataFrame to count the occurrences of each unique value in the 'Attrition' column
+attrition_count = pd.DataFrame(df['Attrition'].value_counts())
+
+# Print the output
+print(attrition_count)
+
+# Create a pie chart with 'Attrition' counts
+plt.pie(attrition_count['Attrition'], labels=['No', 'Yes'], explode=(0.02, 0.02))
+
+# Display the pie chart
+plt.show()
+
+# Create a categorical plot using 'Attrition' column as x-axis
+sns.catplot(x='Attrition', kind='count', data=df)
+
+# Display the plot
+plt.show()
+
+# Drop the 'EmployeeCount' and 'EmployeeNumber' columns from the DataFrame
+df.drop(['EmployeeCount', 'EmployeeNumber'], axis=1)
+
+# The 'axis=1' parameter specifies that columns should be dropped
+# 'EmployeeCount' and 'EmployeeNumber' are the names of the columns to be dropped
+# The modified DataFrame without the specified columns is not stored in a variable
+
+# Note that this code does not modify the original 'df' DataFrame.
+# To make the changes permanent, you can assign the result to a new variable or reassign it to 'df'.
+
+# Create dummy variables for the 'Attrition' column
+attrition_dummies = pd.get_dummies(df['Attrition'])
+
+# The 'pd.get_dummies()' function is used to convert categorical variables into dummy/indicator variables
+# In this case, it converts the 'Attrition' column into a set of binary columns, where each column represents a unique value in the original column
+# The resulting DataFrame, 'attrition_dummies', contains the dummy variables
+
+# The 'head()' method is used to display the first few rows of the DataFrame for inspection
+# By default, it displays the first 5 rows
+
+# Note that the original DataFrame 'df' is not modified by this operation
+# The dummy variables are stored in the new DataFrame 'attrition_dummies'
+
+# Concatenate the original DataFrame with the dummy variables DataFrame
+df = pd.concat([df, attrition_dummies], axis=1)
+
+# The 'pd.concat()' function is used to concatenate DataFrames along a specified axis
+# In this case, it concatenates the original DataFrame 'df' and the dummy variables DataFrame 'attrition_dummies'
+# The 'axis=1' parameter indicates that the concatenation is done horizontally, i.e., by adding columns
+
+# The resulting concatenated DataFrame is assigned back to the variable 'df'
+
+# The 'head()' method is used to display the first few rows of the DataFrame for inspection
+# By default, it displays the first 5 rows
+
+# Note that the original DataFrames 'df' and 'attrition_dummies' are not modified by this operation
+# The concatenated DataFrame is stored in the new variable 'df'
+
+# Drop the columns 'Attrition' and 'No' from the DataFrame
+df = df.drop(['Attrition', 'No'], axis=1)
+
+# The 'drop()' method is used to remove specified columns or rows from a DataFrame
+# In this case, it drops the columns 'Attrition' and 'No' from the DataFrame 'df'
+# The 'axis=1' parameter indicates that the columns are being dropped
+
+# The resulting DataFrame with the columns dropped is assigned back to the variable 'df'
+
+# The 'head()' method is used to display the first few rows of the DataFrame for inspection
+# By default, it displays the first 5 rows
+
+# Note that the original DataFrame 'df' is not modified by this operation
+# The resulting DataFrame with the columns dropped is stored in the new variable 'df'
+
+# Create a bar plot using seaborn's barplot() function
+sns.barplot(x='Gender', y='Yes', data=df)
+
+# The 'barplot()' function is used to create a bar plot
+# In this case, it takes the column 'Gender' as the x-axis and the column 'Yes' as the y-axis from the DataFrame 'df'
+# It uses the data from the DataFrame to generate the plot
+
+# The resulting bar plot is displayed
+
+# Create a bar plot using seaborn's barplot() function
+sns.barplot(x='Department', y='Yes', data=df)
+
+# The 'barplot()' function is used to create a bar plot
+# In this case, it takes the column 'Department' as the x-axis and the column 'Yes' as the y-axis from the DataFrame 'df'
+# It uses the data from the DataFrame to generate the plot
+
+# The resulting bar plot is displayed
+
+# Create a bar plot using seaborn's barplot() function
+sns.barplot(x='BusinessTravel', y='Yes', data=df)
+
+# The 'barplot()' function is used to create a bar plot
+# In this case, it takes the column 'BusinessTravel' as the x-axis and the column 'Yes' as the y-axis from the DataFrame 'df'
+# It uses the data from the DataFrame to generate the plot
+
+# The resulting bar plot is displayed
+
+# Set the size of the figure
+plt.figure(figsize=(11, 7))
+
+# Create a correlation heatmap using seaborn's heatmap() function
+sns.heatmap(df.corr())
+
+# The 'heatmap()' function is used to create a correlation heatmap
+# It takes the correlation matrix of the DataFrame 'df' as input
+# The correlation matrix is computed using the 'corr()' method of the DataFrame
+
+# The resulting heatmap is displayed with the specified figure size
+
+# Assign the DataFrame to a new variable 'data'
+data = df
+
+# Access the column names of the DataFrame using the 'columns' attribute
+column_names = df.columns
+
+# The 'columns' attribute returns an Index object containing the column names of the DataFrame
+
+# You can use the 'column_names' variable to access or manipulate the column names as needed
+
+# Drop the specified columns from the DataFrame using the 'drop' function
+# Pass the column names to be dropped as a list to the 'labels' parameter
+# Set the 'axis' parameter to 1 to indicate that the columns should be dropped
+df = df.drop(['Age', 'JobLevel'], axis=1)
+
+# The 'drop' function modifies the DataFrame in-place by removing the specified columns
+
+# After executing this code, the 'Age' and 'JobLevel' columns will no longer be present in the DataFrame 'df'
+
+# Import the necessary libraries
+from sklearn.preprocessing import LabelEncoder
+import numpy as np
+
+# Iterate over each column in the DataFrame
+for column in df.columns:
+    # Check if the column contains numerical data
+    if df[column].dtype == np.number:
+        continue
+    else:
+        # If the column contains non-numerical data, encode it using LabelEncoder
+        # Create an instance of LabelEncoder and fit-transform the column values
+        df[column] = LabelEncoder().fit_transform(df[column])
+
+# The loop iterates over each column in the DataFrame
+# If a column contains numerical data, it is skipped using the 'continue' statement
+# If a column contains non-numerical data, it is encoded using the LabelEncoder
+
+# After executing this code, the non-numerical columns in the DataFrame 'df' will be encoded with numerical labels
+
+# Import the necessary libraries
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+
+# Assuming you have encoded your data and created your feature matrix 'X' and target vector 'y'
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+
+# Create an instance of the RandomForestClassifier
+rf = RandomForestClassifier(n_estimators=10, criterion='entropy', random_state=0)
+
+# Fit the model on the training data
+rf.fit(X_train, y_train)
+
+# After executing this code, the RandomForestClassifier model 'rf' will be trained on the training data
+
+# Assuming you have prepared your DataFrame 'df' with the target variable 'Yes' and the remaining features
+
+# Create the feature matrix 'X' by dropping the target variable
+X = df.drop(['Yes'], axis=1)
+
+# Create the target vector 'y' by selecting only the target variable
+y = df['Yes']
+
+# Assuming you have already imported the necessary libraries and defined 'x' and 'y'
+
+# Perform train-test split on the data
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=0)
+
+print(x_train.head())
+
+rf.fit(x_train, y_train)
+
+rf.score(x_train, y_train)
+
+pred = rf.predict(x_test)
+from sklearn.metrics import accuracy_score
+accuracy_score(y_test, pred)
+
+# Accuracy for Tested Data = 85.26 %
